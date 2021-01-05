@@ -1,7 +1,7 @@
 Next Word Predict
 ========================================================
-author: Jeffrey M. Hunter
-date: 28 July, 2019
+author: Leonardo Eras
+date: 05 Jan, 2021
 autosize: true
 transition: rotate
 class: smaller
@@ -23,13 +23,13 @@ algorithm.
 The Next Word Predict app is located at:
 
 <ul>
-    <li><a target="_blank" href="https://jhunter.shinyapps.io/coursera-data-science-capstone/">https://jhunter.shinyapps.io/coursera-data-science-capstone/</a></li>
+    <li><a target="_blank" href="https://leras.shinyapps.io/DataScienceCapstone/">https://leras.shinyapps.io/DataScienceCapstone/</a></li>
 </ul>
 
 The source code files can be found on GitHub:
 
 <ul>
-    <li><a target="_blank" href="https://github.com/oraclejavanet/coursera-data-science-capstone/">https://github.com/oraclejavanet/coursera-data-science-capstone/</a></li>
+    <li><a target="_blank" href="https://github.com/LeoEras/CourseraDataScienceCapstoneProject">https://github.com/LeoEras/CourseraDataScienceCapstoneProject</a></li>
 </ul>
 
 Check back regularly as the codebase is continually being updated with
