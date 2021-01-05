@@ -1,0 +1,152 @@
+---
+title: "Milestone Report"
+author: "Leonardo Eras"
+date: "05/01/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+require(knitr)
+knitr::opts_chunk$set(echo = TRUE)
+opts_knit$set(root.dir = "/home/leo")
+```
+
+## Basic report
+
+```{r}
+#Package tm (Text Mining) required for this assignment.
+library(tm)
+library(NLP)
+library(textmineR)
+library(RWeka)
+library(ggplot2)
+library(wordcloud)
+```
+
+After downloading and extracting our dataset (be patient, there are a lot of data records), we can start exploring it. This report assumes you donwloaded by your own the datasets We will take some random samples from the files, and not use all of the records. A small sample will suffice for now. This report will include some graphics.
+
+```{r}
+#setwd("/home/leo")
+datafolder <- paste(getwd(), "/RstudioProjects/final/en_US/", sep = "")
+setwd(datafolder)
+
+#Loading datasets
+twitter <- readLines("en_US.twitter.txt", warn = FALSE)
+blogs <- readLines("en_US.blogs.txt", warn = FALSE)
+news_file <- readLines("en_US.news.txt", warn = FALSE)
+```
+
+To understand the depth of the dataset, let’s run some basic statistics on the text in the 3 files (blogs, news & twitter). We will calculate the total number of lines, characters and words in the data as well as minimum, average (mean) and maximum word counts for any the 3 data files.
+
+```{r echo=FALSE}
+flist <- list.files(path=datafolder, recursive=T, pattern=".*en_.*.txt")
+l <- lapply(paste(datafolder, flist, sep=""), function(f) {
+  fsize <- file.info(f)[1]/1024/1024
+  con <- file(f, open="r")
+  lines <- readLines(con)
+  nchars <- lapply(lines, nchar)
+  maxchars <- which.max(nchars)
+  nwords <- sum(sapply(strsplit(lines, "\\s+"), length))
+  close(con)
+  return(c(f, format(round(fsize, 2), nsmall=2), length(lines), maxchars, nwords))
+})
+```
+
+```{r}
+df <- data.frame(matrix(unlist(l), nrow=length(l), byrow=T))
+colnames(df) <- c("file", "size(MB)", "num.of.lines", "longest.line", "num.of.words")
+df
+```
+
+After several tests, a random sample of 1% of the data was determined to be enough for this exercise. A larger value will produce an unmanageable corpus.
+
+This is to allow us to provide a faster look at the data to see what we see and decide on the next steps before analyzing the entire data files.
+
+```{r}
+set.seed(1234)
+
+t_sample <- sample(twitter, length(twitter)*.01)
+n_sample <- sample(news_file, length(news_file)*0.01)
+b_sample <- sample(blogs, length(blogs)*.01)
+
+combined_sample <- c(t_sample, n_sample, b_sample)
+combined_sample <- iconv(combined_sample, "UTF-8","ASCII", sub="")
+length(combined_sample)
+```
+In order to create a nanogram, I chose to clean the data a little bit: strip white-space, lower case remove, punctuation remove, number remove, plain text conversion, and english stop-words detection.
+
+```{r}
+corpus <- VCorpus(VectorSource(combined_sample))
+corpus <- tm_map(corpus, stripWhitespace)
+corpus <- tm_map(corpus, tolower)
+corpus <- tm_map(corpus, removePunctuation)
+corpus <- tm_map(corpus, removeNumbers)
+corpus <- tm_map(corpus, PlainTextDocument)
+corpus <- tm_map(corpus, removeWords, stopwords("english"))
+```
+
+```{r}
+unigram <- function(x) NGramTokenizer(x, Weka_control(min = 1, max = 1))
+unigram_tdm <- TermDocumentMatrix(corpus, control = list(tokenize = unigram))
+unigram_freqTerm <- findFreqTerms(unigram_tdm,lowfreq = 40)
+
+bigram <- function(x) NGramTokenizer(x, Weka_control(min = 2, max = 2))
+bigram_tdm <- TermDocumentMatrix(corpus, control = list(tokenize = bigram))
+bigram_freqTerm <- findFreqTerms(bigram_tdm,lowfreq=40)
+
+trigram <- function(x) NGramTokenizer(x, Weka_control(min = 3, max = 3))
+trigram_tdm <- TermDocumentMatrix(corpus, control = list(tokenize = trigram))
+trigram_freqTerm <- findFreqTerms(trigram_tdm,lowfreq=10)
+
+quadgram <- function(x) NGramTokenizer(x, Weka_control(min = 4, max = 4))
+quadgram_tdm <- TermDocumentMatrix(corpus, control = list(tokenize = quadgram))
+quadgram_freqTerm <- findFreqTerms(quadgram_tdm,lowfreq=10)
+```
+
+## Unigram word cloud and histogram
+
+```{r}
+unigram_freq <- rowSums(as.matrix(unigram_tdm[unigram_freqTerm,]))
+unigram_ord <- order(unigram_freq, decreasing = TRUE)
+unigram_freq <- data.frame(word=names(unigram_freq[unigram_ord]), frequency=unigram_freq[unigram_ord])
+
+ggplot(unigram_freq[1:25,], aes(factor(word, levels = unique(word)), frequency)) +
+  geom_bar(stat = 'identity')+
+  theme(axis.text.x=element_text(angle=90))+
+  xlab('Unigram')+
+  ylab('Frequency')
+```
+```{r}
+wordcloud(unigram_freq$word, unigram_freq$frequency, max.words=40, colors=brewer.pal(8, "Set1"))
+```
+Now with our constructed bigram
+```{r}
+bigram_freq <- rowSums(as.matrix(bigram_tdm[bigram_freqTerm,]))
+bigram_ord <- order(bigram_freq, decreasing = TRUE)
+bigram_freq <- data.frame(word=names(bigram_freq[bigram_ord]), frequency=bigram_freq[bigram_ord])
+
+ggplot(bigram_freq[1:20,], aes(factor(word, levels = unique(word)), frequency)) +
+  geom_bar(stat = 'identity')+
+  theme(axis.text.x=element_text(angle=90))+
+  xlab('Bigram')+
+  ylab('Frequency')
+```
+```{r}
+wordcloud(bigram_freq$word, bigram_freq$frequency, max.words=30, colors=brewer.pal(8, "Set1"))
+```
+With the trigram
+```{r}
+trigram_freq <- rowSums(as.matrix(trigram_tdm[trigram_freqTerm,]))
+trigram_ord <- order(trigram_freq, decreasing = TRUE)
+trigram_freq <- data.frame(word=names(trigram_freq[trigram_ord]), frequency=trigram_freq[trigram_ord])
+
+ggplot(trigram_freq[1:15,], aes(factor(word, levels = unique(word)), frequency)) +
+  geom_bar(stat = 'identity')+
+  theme(axis.text.x=element_text(angle=90))+
+  xlab('Trigram')+
+  ylab('Frequency')
+```
+```{r}
+wordcloud(trigram_freq$word, trigram_freq$frequency, max.words=15, colors=brewer.pal(8, "Set1"))
+```
+Nothing of importance was found with the tetragram. I used a 1% of the data, perhaps I need more data (and a better laptop)
