@@ -1,0 +1,12 @@
+name: DataScienceCapstone
+title: DataScienceCapstone
+username:
+account: leras
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3446121
+bundleId: 4062473
+url: https://leras.shinyapps.io/DataScienceCapstone/
+when: 1609890704.14241
+asMultiple: FALSE
+asStatic: FALSE
